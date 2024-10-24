@@ -4,7 +4,7 @@
 use std::process::Command;
 use std::fs::OpenOptions;
 use std::io::Write;
-use my_path_cleaner_lib::run;
+use tauri_path_cleaner::run;
 use log::error;
 use env_logger;
 
