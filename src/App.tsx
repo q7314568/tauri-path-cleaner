@@ -6,7 +6,8 @@ import List from '@mui/material/List';
 import ListItem from '@mui/material/ListItem';
 import ListItemText from '@mui/material/ListItemText';
 import LinearProgress from '@mui/material/LinearProgress';
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
+import { listen } from '@tauri-apps/api/event';
 
 const App: React.FC = () => {
   const [snackbarOpen, setSnackbarOpen] = useState(false);
@@ -14,7 +15,6 @@ const App: React.FC = () => {
   const [selectedPaths, setSelectedPaths] = useState<string[]>([]);
   const [deletionProgress, setDeletionProgress] = useState<number>(0);
   const [isDeleting, setIsDeleting] = useState(false);
-  const [totalFilesToDelete, setTotalFilesToDelete] = useState<number>(0);
 
   const selectFiles = async () => {
     try {
@@ -25,7 +25,6 @@ const App: React.FC = () => {
       if (paths && Array.isArray(paths)) {
         console.log('選擇的檔案路徑:', paths);
         setSelectedPaths(paths);
-        setTotalFilesToDelete(paths.length);
         setSnackbarMessage('檔案選擇成功');
         setSnackbarOpen(true);
       }
@@ -57,7 +56,6 @@ const App: React.FC = () => {
         }
         console.log(totalFiles);
         
-        setTotalFilesToDelete(totalFiles);
         setSnackbarMessage('資料夾選擇成功');
         setSnackbarOpen(true);
       }
@@ -71,15 +69,8 @@ const App: React.FC = () => {
   const deleteSelectedPaths = async () => {
     try {
       setIsDeleting(true);
-      let deletedFiles = 0;
-      for (let i = 0; i < selectedPaths.length; i++) {
-        const path = selectedPaths[i];
-        console.log('準備刪除路徑:', path);
-        await invoke('delete_path', { path });
-        console.log('路徑刪除成功:', path);
-        deletedFiles++;
-        setDeletionProgress((deletedFiles / totalFilesToDelete) * 100);
-      }
+      console.log('準備刪除路徑:', selectedPaths);
+      await invoke('delete_paths_with_progress', { paths: selectedPaths });
       setSnackbarMessage('所有選擇的路徑已成功刪除');
       setSnackbarOpen(true);
       setSelectedPaths([]);
@@ -89,8 +80,6 @@ const App: React.FC = () => {
       setSnackbarOpen(true);
     } finally {
       setIsDeleting(false);
-      setDeletionProgress(0);
-      setTotalFilesToDelete(0);
     }
   };
 
@@ -103,6 +92,21 @@ const App: React.FC = () => {
       }
     }
   };
+
+
+  useEffect(() => {
+    // 監聽來自後端的 "delete-progress" 事件
+    const unlisten = listen<number>('delete-progress', (event) => {
+      console.log(event.payload);
+      setDeletionProgress(event.payload*100);
+      // setProgress(event.payload); // 更新進度條的百分比
+    });
+
+    // 清除監聽器
+    return () => {
+      unlisten.then((fn) => fn());
+    };
+  }, []);
 
   return (
     <div>
