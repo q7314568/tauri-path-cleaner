@@ -98,8 +98,8 @@ const App: React.FC = () => {
     // 監聽來自後端的 "delete-progress" 事件
     const unlisten = listen<number>('delete-progress', (event) => {
       console.log(event.payload);
-      setDeletionProgress(event.payload*100);
-      // setProgress(event.payload); // 更新進度條的百分比
+      // 直接使用後端傳來的百分比數值
+      setDeletionProgress(event.payload);
     });
 
     // 清除監聽器
