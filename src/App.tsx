@@ -69,6 +69,7 @@ const App: React.FC = () => {
   const deleteSelectedPaths = async () => {
     try {
       setIsDeleting(true);
+      setDeletionProgress(0);
       console.log('準備刪除路徑:', selectedPaths);
       await invoke('delete_paths_with_progress', { paths: selectedPaths });
       setSnackbarMessage('所有選擇的路徑已成功刪除');
@@ -98,7 +99,6 @@ const App: React.FC = () => {
     // 監聽來自後端的 "delete-progress" 事件
     const unlisten = listen<number>('delete-progress', (event) => {
       console.log(event.payload);
-      // 直接使用後端傳來的百分比數值
       setDeletionProgress(event.payload);
     });
 
@@ -128,7 +128,16 @@ const App: React.FC = () => {
           <Button variant="contained" color="secondary" onClick={confirmAndDelete} disabled={isDeleting}>
             刪除選擇的檔案或資料夾
           </Button>
-          {isDeleting && <LinearProgress variant="determinate" value={deletionProgress} />}
+          {isDeleting && (
+            <div style={{ display: 'flex', alignItems: 'center', marginTop: '10px' }}>
+              <LinearProgress
+                variant="determinate"
+                value={deletionProgress}
+                style={{ flexGrow: 1, marginRight: '10px' }}
+              />
+              <span>{Math.round(deletionProgress)}%</span>
+            </div>
+          )}
         </div>
       )}
       <Snackbar
